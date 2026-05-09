@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="cuoiky.vcxproj" />
+  <Project Path="cuoiky.vcxproj" Id="81dbc3c7-a628-4c07-bd67-df917398a848" />
 </Solution>
