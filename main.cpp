@@ -3,34 +3,17 @@
 #include <math.h>
 #include "imageloader.h"
 #include "Camera.h"
+#include "Objects.h"
 
 GLuint idGachSan, idViewCanh;
 Camera cam;
 bool firstMouse = true;
+bool isSpinning = false;
+float chairAngle = 0.0f;
 
 const float L = 8.0f;
 const float W = 6.0f;
 const float H = 3.5f;
-
-void drawBox(float xSize, float ySize, float zSize) {
-    glPushMatrix();
-    glScalef(xSize, ySize, zSize);
-    glBegin(GL_QUADS);
-    glVertex3f(-0.5f, -0.5f, 0.5f); glVertex3f(0.5f, -0.5f, 0.5f);
-    glVertex3f(0.5f, 0.5f, 0.5f);   glVertex3f(-0.5f, 0.5f, 0.5f);
-    glVertex3f(-0.5f, -0.5f, -0.5f); glVertex3f(-0.5f, 0.5f, -0.5f);
-    glVertex3f(0.5f, 0.5f, -0.5f);   glVertex3f(0.5f, -0.5f, -0.5f);
-    glVertex3f(-0.5f, 0.5f, -0.5f);  glVertex3f(-0.5f, 0.5f, 0.5f);
-    glVertex3f(0.5f, 0.5f, 0.5f);    glVertex3f(0.5f, 0.5f, -0.5f);
-    glVertex3f(-0.5f, -0.5f, -0.5f); glVertex3f(0.5f, -0.5f, -0.5f);
-    glVertex3f(0.5f, -0.5f, 0.5f);   glVertex3f(-0.5f, -0.5f, 0.5f);
-    glVertex3f(0.5f, -0.5f, -0.5f);  glVertex3f(0.5f, 0.5f, -0.5f);
-    glVertex3f(0.5f, 0.5f, 0.5f);    glVertex3f(0.5f, -0.5f, 0.5f);
-    glVertex3f(-0.5f, -0.5f, -0.5f); glVertex3f(-0.5f, -0.5f, 0.5f);
-    glVertex3f(-0.5f, 0.5f, 0.5f);   glVertex3f(-0.5f, 0.5f, -0.5f);
-    glEnd();
-    glPopMatrix();
-}
 
 void drawFullCylinderBackground(float radius, float height, GLuint texID) {
     glPushMatrix();
@@ -62,11 +45,16 @@ void display() {
     glLoadIdentity();
     cam.apply();
 
-    drawFullCylinderBackground(50.0f, 40.0f, idViewCanh);
+    if (isSpinning) {
+        chairAngle += 5.0f;
+        if (chairAngle > 360.0f) chairAngle -= 360.0f;
+    }
 
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, idGachSan);
     glColor3f(1.0f, 1.0f, 1.0f);
+    drawFullCylinderBackground(50.0f, 40.0f, idViewCanh);
+
+    glBindTexture(GL_TEXTURE_2D, idGachSan);
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 0.0f); glVertex3f(-W / 2, 0.0f, L / 2);
     glTexCoord2f(4.0f, 0.0f); glVertex3f(W / 2, 0.0f, L / 2);
@@ -75,17 +63,33 @@ void display() {
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
-    glColor3f(0.85f, 0.85f, 0.8f);
-    glPushMatrix(); glTranslatef(0, H / 2, -L / 2); drawBox(W, H, 0.1f); glPopMatrix();
-    glPushMatrix(); glTranslatef(W / 2, H / 2, 0); drawBox(0.1f, H, L); glPopMatrix();
-    glPushMatrix(); glTranslatef(-W / 2, 0.45f, 0); drawBox(0.1f, 0.9f, L); glPopMatrix();
-    glPushMatrix(); glTranslatef(-W / 2, H - 0.3f, 0); drawBox(0.1f, 0.6f, L); glPopMatrix();
+
+    glPushMatrix(); glTranslatef(-W / 2, 0, -L / 2); drawUnitBox(W, H, 0.1f, 0.85f, 0.85f, 0.8f); glPopMatrix();
+    glPushMatrix(); glTranslatef(-1.5f, 1.2f, -3.98f); drawUnitBox(3.0f, 1.2f, 0.02f, 0.0f, 0.2f, 0.1f); glPopMatrix();
+    glPushMatrix(); glTranslatef(W / 2, 0, -L / 2); drawUnitBox(0.1f, H, L, 0.85f, 0.85f, 0.8f); glPopMatrix();
+    glPushMatrix(); glTranslatef(-W / 2, 0, -L / 2); drawUnitBox(0.1f, 0.9f, L, 0.85f, 0.85f, 0.8f); glPopMatrix();
+    glPushMatrix(); glTranslatef(-W / 2, H - 0.6f, -L / 2); drawUnitBox(0.1f, 0.6f, L, 0.85f, 0.85f, 0.8f); glPopMatrix();
     for (float i = -3.0f; i <= 3.0f; i += 2.0f) {
-        glPushMatrix(); glTranslatef(-W / 2, H / 2, i); drawBox(0.15f, H, 0.4f); glPopMatrix();
+        glPushMatrix(); glTranslatef(-W / 2, 0, i); drawUnitBox(0.15f, H, 0.4f, 0.85f, 0.85f, 0.8f); glPopMatrix();
     }
-    glPushMatrix(); glTranslatef(-W / 4, H / 2, L / 2); drawBox(W / 2, H, 0.1f); glPopMatrix();
-    glPushMatrix(); glTranslatef(W / 4, H - 0.5f, L / 2); drawBox(W / 2, 1.0f, 0.1f); glPopMatrix();
-    glPushMatrix(); glTranslatef(W / 2, H / 2, L / 2); drawBox(0.1f, H, 0.1f); glPopMatrix();
+
+    glPushMatrix(); glTranslatef(-W / 2, 0, L / 2); drawUnitBox(W / 2, H, 0.1f, 0.85f, 0.85f, 0.8f); glPopMatrix();
+    glPushMatrix(); glTranslatef(0, H - 1.0f, L / 2); drawUnitBox(W / 2, 1.0f, 0.1f, 0.85f, 0.85f, 0.8f); glPopMatrix();
+    glPushMatrix(); glTranslatef(W / 2, 0, L / 2); drawUnitBox(0.1f, H, 0.1f, 0.85f, 0.85f, 0.8f); glPopMatrix();
+
+    for (float z = -1.0f; z <= 2.0f; z += 1.5f) {
+        for (float x = -1.5f; x <= 1.5f; x += 3.0f) {
+            glPushMatrix();
+            glTranslatef(x, 0, z);
+            drawStudentTable();
+            glPushMatrix();
+            glTranslatef(0, 0, 0.5f);
+            glRotatef(180.0f + chairAngle, 0.0f, 1.0f, 0.0f);
+            drawStudentChair();
+            glPopMatrix();
+            glPopMatrix();
+        }
+    }
 
     glEnable(GL_TEXTURE_2D);
     glutSwapBuffers();
@@ -103,6 +107,7 @@ void mousePassiveMotion(int x, int y) {
 
 void keyboard(unsigned char key, int x, int y) {
     if (key == 27) exit(0);
+    if (key == 'f' || key == 'F') isSpinning = !isSpinning;
     cam.handleKeyboard(key);
     glutPostRedisplay();
 }
@@ -118,7 +123,7 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(1280, 720);
-    glutCreateWindow("Mô phỏng phòng học");
+    glutCreateWindow("Phong Hoc HAU");
     init();
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
