@@ -1,11 +1,11 @@
-#include <iostream>
+﻿#include <iostream>
 #include <stdlib.h>
 #include <math.h>
 #include "imageloader.h"
 #include "Camera.h"
 #include "Objects.h"
 
-GLuint idGachSan, idViewCanh;
+GLuint idGachSan, idViewCanh, idMatBan;
 Camera cam;
 bool firstMouse = true;
 bool isSpinning = false;
@@ -36,8 +36,9 @@ void init() {
     glClearColor(0.1, 0.1, 0.1, 1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
-    idGachSan = textureFromBMP("data/sannha.bmp");
+    idGachSan = textureFromBMP("data/sannha3.bmp");
     idViewCanh = textureFromBMP("data/view1.bmp");
+    idMatBan = textureFromBMP("data/matban.bmp");
 }
 
 void display() {
@@ -56,10 +57,10 @@ void display() {
 
     glBindTexture(GL_TEXTURE_2D, idGachSan);
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex3f(-W / 2, 0.0f, L / 2);
-    glTexCoord2f(4.0f, 0.0f); glVertex3f(W / 2, 0.0f, L / 2);
-    glTexCoord2f(4.0f, 6.0f); glVertex3f(W / 2, 0.0f, -L / 2);
-    glTexCoord2f(0.0f, 6.0f); glVertex3f(-W / 2, 0.0f, -L / 2);
+    glTexCoord2f(0.0f, 0.0f);    glVertex3f(-W / 2, 0.0f, L / 2);
+    glTexCoord2f(10.0f, 0.0f);   glVertex3f(W / 2, 0.0f, L / 2);
+    glTexCoord2f(10.0f, 13.33f); glVertex3f(W / 2, 0.0f, -L / 2);
+    glTexCoord2f(0.0f, 13.33f);  glVertex3f(-W / 2, 0.0f, -L / 2);
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
@@ -81,10 +82,11 @@ void display() {
         for (float x = -1.5f; x <= 1.5f; x += 3.0f) {
             glPushMatrix();
             glTranslatef(x, 0, z);
-            drawStudentTable();
+            drawStudentTable(idMatBan);
             glPushMatrix();
             glTranslatef(0, 0, 0.5f);
-            glRotatef(180.0f + chairAngle, 0.0f, 1.0f, 0.0f);
+            // Đã chỉnh: Bỏ xoay 180 độ mặc định để ghế hướng về bàn
+            glRotatef(chairAngle, 0.0f, 1.0f, 0.0f);
             drawStudentChair();
             glPopMatrix();
             glPopMatrix();
