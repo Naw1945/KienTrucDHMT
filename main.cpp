@@ -6,7 +6,7 @@
 #include "Objects.h"
 #include <string>
 
-GLuint idGachSan, idViewCanh, idMatBan, idTuong, idSky, idHell;
+GLuint idGachSan, idViewCanh, idMatBan, idTuong, idSky, idHell, idTranNha, idBang, idDieuHoa, idDen;
 Camera cam;
 bool firstMouse = true;
 bool isSpinning = false;
@@ -14,9 +14,9 @@ bool isLightOn = true;
 float chairAngle = 0.0f;
 float skyHellRot = 0.0f;
 
-const float L = 8.0f;
-const float W = 6.0f;
-const float H = 3.5f;
+const float L = 9.0f;
+const float W = 9.0f;
+const float H = 3.0f;
 
 void drawUI() {
     glMatrixMode(GL_PROJECTION);
@@ -100,10 +100,14 @@ void init() {
     glEnable(GL_TEXTURE_2D);
     idGachSan = textureFromBMP("data/sannha3.bmp");
     idViewCanh = textureFromBMP("data/view1.bmp");
-    idMatBan = textureFromBMP("data/matban.bmp");
+    idMatBan = textureFromBMP("data/matban3.bmp");
     idTuong = textureFromBMP("data/tuong.bmp");
     idSky = textureFromBMP("data/sky.bmp");
     idHell = textureFromBMP("data/hell.bmp");
+    idTranNha = textureFromBMP("data/trannha.bmp");
+    idBang = textureFromBMP("data/bang.bmp");
+    idDieuHoa = textureFromBMP("data/dieuhoa.bmp");
+    idDen = textureFromBMP("data/den.bmp");
 }
 
 void display() {
@@ -124,9 +128,9 @@ void display() {
     glBindTexture(GL_TEXTURE_2D, idGachSan);
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 0.0f);    glVertex3f(-W / 2, 0.0f, L / 2);
-    glTexCoord2f(10.0f, 0.0f);   glVertex3f(W / 2, 0.0f, L / 2);
-    glTexCoord2f(10.0f, 13.33f); glVertex3f(W / 2, 0.0f, -L / 2);
-    glTexCoord2f(0.0f, 13.33f);  glVertex3f(-W / 2, 0.0f, -L / 2);
+    glTexCoord2f(15.0f, 0.0f);   glVertex3f(W / 2, 0.0f, L / 2);
+    glTexCoord2f(15.0f, 15.0f);  glVertex3f(W / 2, 0.0f, -L / 2);
+    glTexCoord2f(0.0f, 15.0f);   glVertex3f(-W / 2, 0.0f, -L / 2);
     glEnd();
     glBindTexture(GL_TEXTURE_2D, idTuong);
     glBegin(GL_QUADS);
@@ -155,22 +159,99 @@ void display() {
     glTexCoord2f(1.0f, 1.0f); glVertex3f(-W / 2, H, L / 2);
     glTexCoord2f(0.0f, 1.0f); glVertex3f(W / 2, H, L / 2);
     glEnd();
-    glDisable(GL_TEXTURE_2D);
-    if (isLightOn) glColor3f(1.0f, 1.0f, 0.0f);
-    else glColor3f(0.2f, 0.2f, 0.0f);
+
+    if (isLightOn) glColor3f(1.0f, 1.0f, 1.0f);
+    else glColor3f(0.2f, 0.2f, 0.2f);
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, idTranNha);
     glBegin(GL_QUADS);
-    glVertex3f(-W / 2, H, -L / 2); glVertex3f(W / 2, H, -L / 2);
-    glVertex3f(W / 2, H, L / 2); glVertex3f(-W / 2, H, L / 2);
+    glTexCoord2f(0.0f, 0.0f);   glVertex3f(-W / 2, H, -L / 2);
+    glTexCoord2f(15.0f, 0.0f);  glVertex3f(W / 2, H, -L / 2);
+    glTexCoord2f(15.0f, 15.0f); glVertex3f(W / 2, H, L / 2);
+    glTexCoord2f(0.0f, 15.0f);  glVertex3f(-W / 2, H, L / 2);
     glEnd();
-    glPushMatrix(); glTranslatef(-1.5f, 1.2f, -3.95f); drawUnitBox(3.0f, 1.2f, 0.02f, 0.0f, 0.2f, 0.1f, isLightOn); glPopMatrix();
+
+    float ceilingY = H - 0.001f;
+    float acSize = 1.2f;
+    float lightSize = 0.6f;
+
+    glBindTexture(GL_TEXTURE_2D, idDieuHoa);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-W / 2 + 1.8f, ceilingY, L / 2 - 3.0f);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(-W / 2 + 1.8f + acSize, ceilingY, L / 2 - 3.0f);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(-W / 2 + 1.8f + acSize, ceilingY, L / 2 - 3.0f - acSize);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-W / 2 + 1.8f, ceilingY, L / 2 - 3.0f - acSize);
+
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(W / 2 - 1.8f - acSize, ceilingY, L / 2 - 3.0f);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(W / 2 - 1.8f, ceilingY, L / 2 - 3.0f);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(W / 2 - 1.8f, ceilingY, L / 2 - 3.0f - acSize);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(W / 2 - 1.8f - acSize, ceilingY, L / 2 - 3.0f - acSize);
+    glEnd();
+
+    if (isLightOn) glColor3f(1.0f, 1.0f, 1.0f);
+    else glColor3f(0.1f, 0.1f, 0.1f);
+
+    glBindTexture(GL_TEXTURE_2D, idDen);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-W / 2 + 1.8f, ceilingY, L / 2 - 0.6f);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(-W / 2 + 1.8f + lightSize, ceilingY, L / 2 - 0.6f);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(-W / 2 + 1.8f + lightSize, ceilingY, L / 2 - 0.6f - lightSize);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-W / 2 + 1.8f, ceilingY, L / 2 - 0.6f - lightSize);
+
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-lightSize / 2, ceilingY, L / 2 - 0.6f);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(lightSize / 2, ceilingY, L / 2 - 0.6f);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(lightSize / 2, ceilingY, L / 2 - 0.6f - lightSize);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-lightSize / 2, ceilingY, L / 2 - 0.6f - lightSize);
+
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(W / 2 - 1.8f - lightSize, ceilingY, L / 2 - 0.6f);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(W / 2 - 1.8f, ceilingY, L / 2 - 0.6f);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(W / 2 - 1.8f, ceilingY, L / 2 - 0.6f - lightSize);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(W / 2 - 1.8f - lightSize, ceilingY, L / 2 - 0.6f - lightSize);
+
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-W / 2 + 1.8f, ceilingY, L / 2 - 4.2f);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(-W / 2 + 1.8f + lightSize, ceilingY, L / 2 - 4.2f);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(-W / 2 + 1.8f + lightSize, ceilingY, L / 2 - 4.2f - lightSize);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-W / 2 + 1.8f, ceilingY, L / 2 - 4.2f - lightSize);
+
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(W / 2 - 1.8f - lightSize, ceilingY, L / 2 - 4.2f);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(W / 2 - 1.8f, ceilingY, L / 2 - 4.2f);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(W / 2 - 1.8f, ceilingY, L / 2 - 4.2f - lightSize);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(W / 2 - 1.8f - lightSize, ceilingY, L / 2 - 4.2f - lightSize);
+
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-W / 2 + 1.8f, ceilingY, -L / 2 + 0.6f + lightSize);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(-W / 2 + 1.8f + lightSize, ceilingY, -L / 2 + 0.6f + lightSize);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(-W / 2 + 1.8f + lightSize, ceilingY, -L / 2 + 0.6f);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-W / 2 + 1.8f, ceilingY, -L / 2 + 0.6f);
+
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-lightSize / 2, ceilingY, -L / 2 + 0.6f + lightSize);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(lightSize / 2, ceilingY, -L / 2 + 0.6f + lightSize);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(lightSize / 2, ceilingY, -L / 2 + 0.6f);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-lightSize / 2, ceilingY, -L / 2 + 0.6f);
+
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(W / 2 - 1.8f - lightSize, ceilingY, -L / 2 + 0.6f + lightSize);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(W / 2 - 1.8f, ceilingY, -L / 2 + 0.6f + lightSize);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(W / 2 - 1.8f, ceilingY, -L / 2 + 0.6f);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(W / 2 - 1.8f - lightSize, ceilingY, -L / 2 + 0.6f);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+
+    if (isLightOn) glColor3f(1.0f, 1.0f, 1.0f);
+    else glColor3f(0.2f, 0.2f, 0.2f);
+
+    glPushMatrix();
+    glTranslatef(-1.5f, 1.2f, -4.45f);
+    drawBoxWithTexture(3.0f, 1.2f, 0.02f, idBang, isLightOn);
+    glPopMatrix();
+
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, idTuong);
-    for (float i = -3.0f; i <= 3.0f; i += 2.0f) {
+    for (float i = -3.5f; i <= 3.5f; i += 2.0f) {
         glPushMatrix(); glTranslatef(-W / 2, 0, i); drawBoxWithTexture(0.15f, H, 0.4f, idTuong, isLightOn); glPopMatrix();
     }
     glDisable(GL_TEXTURE_2D);
-    for (float z = -1.0f; z <= 2.0f; z += 1.5f) {
-        for (float x = -1.5f; x <= 1.5f; x += 3.0f) {
+    for (float z = -1.5f; z <= 2.5f; z += 1.5f) {
+        for (float x = -2.5f; x <= 2.5f; x += 2.5f) {
             glPushMatrix();
             glTranslatef(x, 0, z);
             drawStudentTable(idMatBan, isLightOn);
