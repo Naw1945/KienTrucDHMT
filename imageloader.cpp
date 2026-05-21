@@ -1,10 +1,10 @@
+#include "imageloader.h"
 #include <iostream>
 #include <fstream>
-#include "imageloader.h"
 
 using namespace std;
 
-// Đọc 4 byte -> int
+// Đọc 4 byte -> int 
 int readInt(ifstream& f) {
     char b[4];
     f.read(b, 4);
@@ -26,7 +26,10 @@ unsigned char* loadBMP(const char* filename, int& width, int& height) {
     }
     char type[2];
     f.read(type, 2);
-    if (type[0] != 'B' || type[1] != 'M') return nullptr;
+    if (type[0] != 'B' || type[1] != 'M') {
+        f.close();
+        return nullptr;
+    }
 
     f.ignore(8);
     int dataOffset = readInt(f);
@@ -34,8 +37,12 @@ unsigned char* loadBMP(const char* filename, int& width, int& height) {
     width = readInt(f);
     height = readInt(f);
     f.ignore(2);
+
     short bpp = readShort(f);
-    if (bpp != 24) return nullptr;
+    if (bpp != 24) { 
+        f.close();
+        return nullptr;
+    }
     f.ignore(24);
 
     int row_padded = (width * 3 + 3) & (~3);
@@ -65,12 +72,14 @@ GLuint textureFromBMP(const char* filename) {
     GLuint texHandle;
     glGenTextures(1, &texHandle);
     glBindTexture(GL_TEXTURE_2D, texHandle);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
-    delete[] pixels;
+    delete[] pixels; 
     return texHandle;
 }

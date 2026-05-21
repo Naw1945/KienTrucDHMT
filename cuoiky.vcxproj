@@ -133,8 +133,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="imageloader.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Objects.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
