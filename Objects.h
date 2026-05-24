@@ -1,3 +1,7 @@
+#include <stdlib.h> // Gọi thư viện chuẩn trước
+#ifndef GLUT_DISABLE_ATEXIT_HACK
+#define GLUT_DISABLE_ATEXIT_HACK 1 // Chặn đứng GLUT định nghĩa lại exit
+#endif
 #ifndef OBJECTS_H
 #define OBJECTS_H
 #define GLUT_NO_WARNING_DISABLE
