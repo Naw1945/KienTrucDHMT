@@ -8,6 +8,7 @@
 #include "linedmodel.h"
 #include "texturemodel.h"
 #include "imageloader.h"
+void drawHuongDan(float x, float y, const char* text);
 
 // --- Đồng bộ hóa biến Camera & Di chuyển chuẩn theo Vidu11 ---
 float lx = 0.0f, lz = 0.0f;
@@ -16,6 +17,7 @@ float angle = -1.5f;       // Hướng nhìn mặc định ban đầu
 float speed = 0.1f;
 float heightAngle = 0.0f;
 float height_view = -1.0f; // Độ cao góc nhìn mặc định
+float cameraY = 1.0f; // Độ cao của camera (đứng trên mặt đất)
 
 // --- Trạng thái logic phòng học từ bản cũ của bạn ---
 bool isSpinning = false;
@@ -161,8 +163,8 @@ void renderScene(void) {
     glLoadIdentity();
 
     // Hệ góc nhìn gluLookAt đồng bộ hoàn toàn với Vidu11 của thầy
-    gluLookAt(x, -1.0f, z,
-        x + lx, height_view, z + lz,
+    gluLookAt(x, cameraY, z,
+        x + lx, cameraY + height_view, z + lz,
         0.0f, 1.0f, 0.0f);
 
     glEnable(GL_TEXTURE_2D);
@@ -205,7 +207,7 @@ void renderScene(void) {
         chairAngle += 4.0f;
         if (chairAngle > 360.0f) chairAngle -= 360.0f;
     }
-
+	drawHuongDan(10, 690, "W/S: Tang/Giam do cao goc nhin | A/D: Quay trai/phai | F: Bat/Tat quay | L: Bat/Tat den | Space/Q: Tang/Giam do cao camera | ESC: Thoat");
     glutSwapBuffers();
 }
 
@@ -225,11 +227,37 @@ void processKeys(unsigned char key, int xx, int yy) {
     case 'd':
         angle += 0.03f; lx = cos(angle); lz = sin(angle);
         break;
+    case ' ': // Space để reset góc nhìn về mặc định
+        cameraY += 0.1f;
+		break;
+    case 'q':
+        cameraY -= 0.1f;
+		break;
     case 27: exit(0);
     }
     glutPostRedisplay();
 }
+void drawHuongDan(float x, float y, const char* text) {
+	glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+	glLoadIdentity();
 
+    gluOrtho2D(0, 1280, 0, 720);
+	glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+	glLoadIdentity();
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHTING);
+    glColor3f(1.0f, 1.0f, 1.0f);
+	glRasterPos2f(x, y);
+    for (int i = 0; text[i] != '\0'; i++) {
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, text[i]);
+    }
+    glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();  
+	glMatrixMode(GL_MODELVIEW);
+}
 void processSpecialKeys(int key, int xx, int yy) {
     float fraction = speed;
     switch (key) {
@@ -237,6 +265,7 @@ void processSpecialKeys(int key, int xx, int yy) {
     case GLUT_KEY_RIGHT: x -= lz * fraction; z += lx * fraction; break;
     case GLUT_KEY_UP:    x += lx * fraction; z += lz * fraction; break;
     case GLUT_KEY_DOWN:  x -= lx * fraction; z -= lz * fraction; break;
+    
     }
     glutPostRedisplay();
 }
@@ -261,7 +290,7 @@ int main(int argc, char** argv) {
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
     glutInitWindowPosition(50, 50);
     glutInitWindowSize(1280, 720);
-    glutCreateWindow("Mo Phong Phong Hoc HAU - Chuan Style Thay Toan");
+    glutCreateWindow("Mo Phong Phong Hoc HAU ");
     glEnable(GL_DEPTH_TEST);
 
     glutReshapeFunc(resize);
