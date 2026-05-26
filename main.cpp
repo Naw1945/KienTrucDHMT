@@ -8,27 +8,43 @@
 #include "linedmodel.h"
 #include "texturemodel.h"
 #include "imageloader.h"
-void drawHuongDan(float x, float y, const char* text);
 
-// --- Đồng bộ hóa biến Camera & Di chuyển chuẩn theo Vidu11 ---
+// --- BIẾN TRẠNG THÁI & HỆ GÓC NHÌN ---
 float lx = 0.0f, lz = 0.0f;
-float x = 0.0f, z = 5.0f; // Đứng ở z=5 để nhìn vào phòng học
-float angle = -1.5f;       // Hướng nhìn mặc định ban đầu
+float x = 0.0f, z = 5.0f;
+float angle = -1.5f;
 float speed = 0.1f;
 float heightAngle = 0.0f;
-float height_view = -1.0f; // Độ cao góc nhìn mặc định
-float cameraY = 1.0f; // Độ cao của camera (đứng trên mặt đất)
+float height_view = -1.0f;
+float cameraY = 1.0f;
 
-// --- Trạng thái logic phòng học từ bản cũ của bạn ---
 bool isSpinning = false;
 bool isLightOn = true;
-float chairAngle = 0.0f;
+float fanAngle = 0.0f;
 
-// --- Khai báo TextureModel theo cấu trúc của thầy ---
-TextureModel sanNha, tranNha, tuongGach, bangDen, matBan, chanBanGhe, matGhe, canhQuat;
-Vector3 san_t, tran_t, tuongTruoc_t, tuongSau_t, tuongTrai_t, tuongPhai_t, bang_t;
+// --- KHAI BÁO MÔ HÌNH VẬT THỂ ---
+TextureModel sanNha, tranThuong, tranDen, tranDieuHoa, tuongGach, tuongCua, bangDen;
+TextureModel matBan, chanBan, chanGhe, matGhe, canhQuat, treoQuat;
 
-// --- Hàm draw chuẩn mẫu của thầy Toản trong Vidu11 ---
+Vector3 san_t, tran_t, bang_t;
+Vector3 tuongTruoc_t, tuongSau_t, tuongTrai_t, tuongPhai_t;
+
+// --- KHAI BÁO HÀM ---
+void draw(TextureModel* m, Vector3 t);
+void taoKhoiHop(TextureModel& model, const char* bmpFile, float dx, float dy, float dz);
+void drawHuongDan(float x, float y, const char* text);
+void makeRoomComponents();
+void veTranNha();
+void veCaiBan();
+void veCaiGhe();
+void veQuatTran(float x, float y, float z);
+void renderScene(void);
+void processKeys(unsigned char key, int xx, int yy);
+void processSpecialKeys(int key, int xx, int yy);
+void resize(int width, int height);
+void init();
+
+// --- HÀM VẼ CO LẬP MA TRẬN ---
 void draw(TextureModel* m, Vector3 t) {
     glPushMatrix();
     glTranslatef(t.x, t.y, t.z);
@@ -36,7 +52,7 @@ void draw(TextureModel* m, Vector3 t) {
     glPopMatrix();
 }
 
-// --- Hàm bổ trợ tạo khối hộp dán texture chuẩn chỉ xung quanh gốc (0,0,0) ---
+// --- HÀM KHỞI TẠO KHỐI HỘP DÁN TEXTURE ---
 void taoKhoiHop(TextureModel& model, const char* bmpFile, float dx, float dy, float dz) {
     model.clear();
     model.setTextureFromBMP(bmpFile);
@@ -45,14 +61,14 @@ void taoKhoiHop(TextureModel& model, const char* bmpFile, float dx, float dy, fl
     float hy = dy / 2.0f;
     float hz = dz / 2.0f;
 
-    model.addVertex(point3(-hx, -hy, hz)); // 0
-    model.addVertex(point3(hx, -hy, hz)); // 1
-    model.addVertex(point3(hx, hy, hz)); // 2
-    model.addVertex(point3(-hx, hy, hz)); // 3
-    model.addVertex(point3(-hx, -hy, -hz)); // 4
-    model.addVertex(point3(hx, -hy, -hz)); // 5
-    model.addVertex(point3(hx, hy, -hz)); // 6
-    model.addVertex(point3(-hx, hy, -hz)); // 7
+    model.addVertex(point3(-hx, -hy, hz));
+    model.addVertex(point3(hx, -hy, hz));
+    model.addVertex(point3(hx, hy, hz));
+    model.addVertex(point3(-hx, hy, hz));
+    model.addVertex(point3(-hx, -hy, -hz));
+    model.addVertex(point3(hx, -hy, -hz));
+    model.addVertex(point3(hx, hy, -hz));
+    model.addVertex(point3(-hx, hy, -hz));
 
     TexCoord2 tc0 = texCoord2(0.0f, 0.0f);
     TexCoord2 tc1 = texCoord2(1.0f, 0.0f);
@@ -67,104 +83,150 @@ void taoKhoiHop(TextureModel& model, const char* bmpFile, float dx, float dy, fl
     model.addQuad(quadIndex(4, 5, 1, 0, tc0, tc1, tc2, tc3));
 }
 
-// --- Các hàm khởi tạo vật thể độc lập ---
+// --- KHỞI TẠO VẬT THỂ PHÒNG HỌC ---
 void makeRoomComponents() {
-    // Kích thước phòng 9x9x3 gạch sàn 60x60cm => Tiling hệ số 15
     float tileCount = 15.0f;
 
-    // Thiết lập Sàn nằm phẳng tại gốc tọa độ
-    sanNha.clear(); sanNha.setTextureFromBMP("data/sannha3.bmp");
-    sanNha.addVertex(point3(-4.5, -1.5, 4.5)); // Đẩy sàn xuống y = -1.5 tương đương góc nhìn thầy
-    sanNha.addVertex(point3(4.5, -1.5, 4.5));
-    sanNha.addVertex(point3(4.5, -1.5, -4.5));
-    sanNha.addVertex(point3(-4.5, -1.5, -4.5));
+    sanNha.clear();
+    sanNha.setTextureFromBMP("data/sannha3.bmp");
+    sanNha.addVertex(point3(-4.5f, -1.5f, 4.5f));
+    sanNha.addVertex(point3(4.5f, -1.5f, 4.5f));
+    sanNha.addVertex(point3(4.5f, -1.5f, -4.5f));
+    sanNha.addVertex(point3(-4.5f, -1.5f, -4.5f));
     sanNha.addQuad(quadIndex(0, 1, 2, 3, texCoord2(0, tileCount), texCoord2(tileCount, tileCount), texCoord2(tileCount, 0), texCoord2(0, 0)));
-    san_t = point3(0, 0, 0);
+    san_t = point3(0.0f, 0.0f, 0.0f);
 
-    // Thiết lập Trần nhà tại độ cao y = 1.5 (Tổng độ cao phòng là 3.0m)
-    tranNha.clear(); tranNha.setTextureFromBMP("data/trannha.bmp");
-    tranNha.addVertex(point3(-4.5, 1.5, -4.5));
-    tranNha.addVertex(point3(4.5, 1.5, -4.5));
-    tranNha.addVertex(point3(4.5, 1.5, 4.5));
-    tranNha.addVertex(point3(-4.5, 1.5, 4.5));
-    tranNha.addQuad(quadIndex(0, 1, 2, 3, texCoord2(0, tileCount), texCoord2(tileCount, tileCount), texCoord2(tileCount, 0), texCoord2(0, 0)));
-    tran_t = point3(0, 0, 0);
+    taoKhoiHop(tranThuong, "data/trannha.bmp", 0.6f, 0.01f, 0.6f);
+    taoKhoiHop(tranDen, "data/den.bmp", 0.6f, 0.01f, 0.6f);
+    taoKhoiHop(tranDieuHoa, "data/dieuhoa.bmp", 0.6f, 0.01f, 0.6f);
 
-    // Bức tường phẳng chung (Rộng 9m, Cao 3m)
-    tuongGach.clear(); tuongGach.setTextureFromBMP("data/tuong.bmp");
-    tuongGach.addVertex(point3(-4.5, -1.5, 0));
-    tuongGach.addVertex(point3(4.5, -1.5, 0));
-    tuongGach.addVertex(point3(4.5, 1.5, 0));
-    tuongGach.addVertex(point3(-4.5, 1.5, 0));
+    tuongGach.clear();
+    tuongGach.setTextureFromBMP("data/tuong.bmp");
+    tuongGach.addVertex(point3(-4.5f, -1.5f, 0.0f));
+    tuongGach.addVertex(point3(4.5f, -1.5f, 0.0f));
+    tuongGach.addVertex(point3(4.5f, 1.5f, 0.0f));
+    tuongGach.addVertex(point3(-4.5f, 1.5f, 0.0f));
     tuongGach.addQuad(quadIndex(0, 1, 2, 3, texCoord2(0, 3), texCoord2(4, 3), texCoord2(4, 0), texCoord2(0, 0)));
 
-    // Vị trí tịnh tiến cho 4 bức tường bao quanh phòng học 9x9
-    tuongTruoc_t = point3(0, 0, -4.5);
-    tuongSau_t = point3(0, 0, 4.5);
-    tuongTrai_t = point3(-4.5, 0, 0);
-    tuongPhai_t = point3(4.5, 0, 0);
+    tuongCua.clear();
+    tuongCua.setTextureFromBMP("data/tuong.bmp");
+    tuongCua.addVertex(point3(-4.5f, -1.5f, 0.0f));
+    tuongCua.addVertex(point3(4.5f, -1.5f, 0.0f));
+    tuongCua.addVertex(point3(4.5f, 1.5f, 0.0f));
+    tuongCua.addVertex(point3(-4.5f, 1.5f, 0.0f));
+    tuongCua.addQuad(quadIndex(0, 1, 2, 3, texCoord2(0, 1), texCoord2(1, 1), texCoord2(1, 0), texCoord2(0, 0)));
 
-    // Bảng viết căn giữa
-    bangDen.clear(); bangDen.setTextureFromBMP("data/bang.bmp");
-    bangDen.addVertex(point3(-2.2f, -0.5f, 0));
-    bangDen.addVertex(point3(2.2f, -0.5f, 0));
-    bangDen.addVertex(point3(2.2f, 0.7f, 0));
-    bangDen.addVertex(point3(-2.2f, 0.7f, 0));
+    tuongTruoc_t = point3(0.0f, 0.0f, -4.5f);
+    tuongSau_t = point3(0.0f, 0.0f, 4.5f);
+    tuongTrai_t = point3(-4.5f, 0.0f, 0.0f);
+    tuongPhai_t = point3(4.5f, 0.0f, 0.0f);
+
+    bangDen.clear();
+    bangDen.setTextureFromBMP("data/bang.bmp");
+    bangDen.addVertex(point3(-2.2f, -0.5f, 0.0f));
+    bangDen.addVertex(point3(2.2f, -0.5f, 0.0f));
+    bangDen.addVertex(point3(2.2f, 0.7f, 0.0f));
+    bangDen.addVertex(point3(-2.2f, 0.7f, 0.0f));
     bangDen.addQuad(quadIndex(0, 1, 2, 3, texCoord2(0, 1), texCoord2(1, 1), texCoord2(1, 0), texCoord2(0, 0)));
-    bang_t = point3(0, 0, -4.49f); // Đặt sát tường trước
+    bang_t = point3(0.0f, 0.0f, -4.49f);
 
-    // Khởi tạo các hình khối nhỏ cho nội thất bàn ghế
     taoKhoiHop(matBan, "data/matban3.bmp", 1.4f, 0.05f, 0.6f);
-    taoKhoiHop(chanBanGhe, "data/tuong.bmp", 0.04f, 0.7f, 0.04f);
+    taoKhoiHop(chanBan, "data/thanban.bmp", 0.04f, 0.7f, 0.04f);
     taoKhoiHop(matGhe, "data/matban3.bmp", 0.4f, 0.04f, 0.4f);
+    taoKhoiHop(chanGhe, "data/thanban.bmp", 0.04f, 0.4f, 0.04f);
     taoKhoiHop(canhQuat, "data/den.bmp", 0.7f, 0.01f, 0.08f);
+    taoKhoiHop(treoQuat, "data/thanban.bmp", 0.04f, 0.4f, 0.04f);
 }
 
+// --- HÀM VẼ HỆ THỐNG TRẦN Ô MA TRẬN ---
+void veTranNha() {
+    float size = 0.6f;
+
+    for (int i = -7; i <= 7; i++) {
+        for (int j = -7; j <= 7; j++) {
+            float px = i * size;
+            float pz = j * size;
+
+            bool laDieuHoa = (i >= -1 && i <= 0) && (j >= -1 && j <= 0);
+            bool laDen = ((i == -5 || i == 5) && (j == -3 || j == 3));
+
+            glPushMatrix();
+            glTranslatef(px, 1.495f, pz);
+
+            if (laDieuHoa) {
+                tranDieuHoa.draw();
+            }
+            else if (laDen) {
+                tranDen.draw();
+            }
+            else {
+                tranThuong.draw();
+            }
+
+            glPopMatrix();
+        }
+    }
+}
+
+// --- CÁC HÀM VẼ NỘI THẤT ---
 void veCaiBan() {
-    glPushMatrix(); glTranslatef(0.0f, -0.8f, 0.0f); matBan.draw(); glPopMatrix();
+    glPushMatrix();
+    glTranslatef(0.0f, -0.8f, 0.0f);
+    matBan.draw();
+    glPopMatrix();
+
     float cx[4] = { -0.65f, 0.65f, 0.65f, -0.65f };
     float cz[4] = { -0.25f, -0.25f, 0.25f, 0.25f };
     for (int i = 0; i < 4; i++) {
         glPushMatrix();
         glTranslatef(cx[i], -1.15f, cz[i]);
-        chanBanGhe.draw();
+        chanBan.draw();
         glPopMatrix();
     }
 }
 
 void veCaiGhe() {
-    glPushMatrix(); glTranslatef(0.0f, -1.05f, 0.0f); matGhe.draw(); glPopMatrix();
+    glPushMatrix();
+    glTranslatef(0.0f, -1.08f, 0.0f);
+    matGhe.draw();
+    glPopMatrix();
+
     float cx[4] = { -0.18f, 0.18f, 0.18f, -0.18f };
     float cz[4] = { -0.18f, -0.18f, 0.18f, 0.18f };
     for (int i = 0; i < 4; i++) {
         glPushMatrix();
-        glTranslatef(cx[i], -1.275f, cz[i]);
-        chanBanGhe.draw();
+        glTranslatef(cx[i], -1.3f, cz[i]);
+        chanGhe.draw();
         glPopMatrix();
     }
 }
 
 void veQuatTran(float x, float y, float z) {
     glPushMatrix();
+    glTranslatef(x, 1.4f, z);
+    treoQuat.draw();
+    glPopMatrix();
+
+    glPushMatrix();
     glTranslatef(x, y, z);
-    glRotatef(chairAngle, 0.0f, 1.0f, 0.0f);
+    glRotatef(fanAngle, 0.0f, 1.0f, 0.0f);
     for (int i = 0; i < 3; i++) {
         glPushMatrix();
         glRotatef(i * 120.0f, 0.0f, 1.0f, 0.0f);
-        glTranslatef(0.35f, 0.0f, 0.0f);
+        glTranslatef(0.35f, -0.1f, 0.0f);
         canhQuat.draw();
         glPopMatrix();
     }
     glPopMatrix();
 }
 
+// --- HÀM HIỂN THỊ CHÍNH ---
 void renderScene(void) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
-    // Hệ góc nhìn gluLookAt đồng bộ hoàn toàn với Vidu11 của thầy
     gluLookAt(x, cameraY, z,
-        x + lx, cameraY + height_view, z + lz,
+        x + lx, cameraY + sin(heightAngle), z + lz,
         0.0f, 1.0f, 0.0f);
 
     glEnable(GL_TEXTURE_2D);
@@ -172,22 +234,19 @@ void renderScene(void) {
     if (isLightOn) glColor3f(1.0f, 1.0f, 1.0f);
     else glColor3f(0.2f, 0.2f, 0.2f);
 
-    // Vẽ vỏ phòng học sử dụng hàm draw() con trỏ mẫu của thầy
     draw(&sanNha, san_t);
-    draw(&tranNha, tran_t);
+    veTranNha();
+
     draw(&tuongGach, tuongTruoc_t);
     draw(&bangDen, bang_t);
 
-    // Tường sau và hai bên cần góc xoay tương ứng để khép kín hộp 3D
-    glPushMatrix(); glTranslatef(tuongSau_t.x, tuongSau_t.y, tuongSau_t.z); glRotatef(180, 0, 1, 0); tuongGach.draw(); glPopMatrix();
-    glPushMatrix(); glTranslatef(tuongTrai_t.x, tuongTrai_t.y, tuongTrai_t.z); glRotatef(90, 0, 1, 0); tuongGach.draw(); glPopMatrix();
+    glPushMatrix(); glTranslatef(tuongSau_t.x, tuongSau_t.y, tuongSau_t.z); glRotatef(180, 0, 1, 0); tuongCua.draw(); glPopMatrix();
+    glPushMatrix(); glTranslatef(tuongTrai_t.x, tuongTrai_t.y, tuongTrai_t.z); glRotatef(90, 0, 1, 0); tuongCua.draw(); glPopMatrix();
     glPushMatrix(); glTranslatef(tuongPhai_t.x, tuongPhai_t.y, tuongPhai_t.z); glRotatef(-90, 0, 1, 0); tuongGach.draw(); glPopMatrix();
 
-    // Thiết bị trần nhà
     veQuatTran(0.0f, 1.3f, -1.5f);
     veQuatTran(0.0f, 1.3f, 1.5f);
 
-    // Ma trận cụm bàn ghế học sinh
     for (float zb = -1.5f; zb <= 2.5f; zb += 1.5f) {
         for (float xb = -2.5f; xb <= 2.5f; xb += 2.5f) {
             glPushMatrix();
@@ -204,19 +263,51 @@ void renderScene(void) {
     }
 
     if (isSpinning) {
-        chairAngle += 4.0f;
-        if (chairAngle > 360.0f) chairAngle -= 360.0f;
+        fanAngle += 4.0f;
+        if (fanAngle > 360.0f) fanAngle -= 360.0f;
     }
-	drawHuongDan(10, 690, "W/S: Tang/Giam do cao goc nhin | A/D: Quay trai/phai | F: Bat/Tat quay | L: Bat/Tat den | Space/Q: Tang/Giam do cao camera | ESC: Thoat");
+
+    drawHuongDan(10, 690, "W / S    : Tang / Giam do cao goc nhin");
+    drawHuongDan(10, 665, "A / D    : Quay trai / phai camera");
+    drawHuongDan(10, 640, "SPACE / Q: Tang / Giam do cao cua camera");
+    drawHuongDan(10, 615, "F        : Bat / Tat quay quat tran");
+    drawHuongDan(10, 590, "L        : Bat / Tat thap sang phong hoc");
+    drawHuongDan(10, 565, "ESC      : Thoat ung dung");
+
     glutSwapBuffers();
 }
 
+// --- HÀM VẼ CHỮ HƯỚNG DẪN 2D ---
+void drawHuongDan(float x, float y, const char* text) {
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, 1280, 0, 720);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHTING);
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glRasterPos2f(x, y);
+    for (int i = 0; text[i] != '\0'; i++) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, text[i]);
+    }
+    glPopMatrix();
+
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+}
+
+// --- XỬ LÝ SỰ KIỆN BÀN PHÍM ---
 void processKeys(unsigned char key, int xx, int yy) {
     switch (key) {
     case 'f': case 'F': isSpinning = !isSpinning; break;
     case 'l': case 'L': isLightOn = !isLightOn; break;
     case 'w':
-        if (heightAngle < PI / 2) { heightAngle += 0.05f; height_view = sin(heightAngle) - 1.0f; }
+        if (heightAngle < PI / 2) { heightAngle += 0.05f; height_view = sin(heightAngle); }
         break;
     case 's':
         if (heightAngle > (-PI / 2)) { heightAngle -= 0.05f; height_view = sin(heightAngle) - 1.0f; }
@@ -227,37 +318,17 @@ void processKeys(unsigned char key, int xx, int yy) {
     case 'd':
         angle += 0.03f; lx = cos(angle); lz = sin(angle);
         break;
-    case ' ': // Space để reset góc nhìn về mặc định
+    case ' ':
         cameraY += 0.1f;
-		break;
+        break;
     case 'q':
         cameraY -= 0.1f;
-		break;
+        break;
     case 27: exit(0);
     }
     glutPostRedisplay();
 }
-void drawHuongDan(float x, float y, const char* text) {
-	glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-	glLoadIdentity();
 
-    gluOrtho2D(0, 1280, 0, 720);
-	glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-	glLoadIdentity();
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_LIGHTING);
-    glColor3f(1.0f, 1.0f, 1.0f);
-	glRasterPos2f(x, y);
-    for (int i = 0; text[i] != '\0'; i++) {
-		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, text[i]);
-    }
-    glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();  
-	glMatrixMode(GL_MODELVIEW);
-}
 void processSpecialKeys(int key, int xx, int yy) {
     float fraction = speed;
     switch (key) {
@@ -265,11 +336,11 @@ void processSpecialKeys(int key, int xx, int yy) {
     case GLUT_KEY_RIGHT: x -= lz * fraction; z += lx * fraction; break;
     case GLUT_KEY_UP:    x += lx * fraction; z += lz * fraction; break;
     case GLUT_KEY_DOWN:  x -= lx * fraction; z -= lz * fraction; break;
-    
     }
     glutPostRedisplay();
 }
 
+// --- KHỞI TẠO HỆ THỐNG CỬA SỔ VÀ ĐỒ HỌA ---
 void resize(int width, int height) {
     if (height == 0) height = 1;
     glViewport(0, 0, width, height);
