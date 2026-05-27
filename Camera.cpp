@@ -1,15 +1,14 @@
 #include "Camera.h"
 #include <math.h>
 
-// Định nghĩa hằng số chuyển đổi từ Độ sang Radian
 const float TO_RAD = 3.14159265f / 180.0f;
 
 Camera::Camera() {
-    x = 0.0f; y = 1.6f; z = 5.0f;       // Chiều cao 1.6m khá chuẩn với tầm mắt người
+    x = 0.0f; y = 1.6f; z = 5.0f;
     lx = 0.0f; ly = 0.0f; lz = -1.0f;
     yaw = -90.0f;
     pitch = 0.0f;
-    speed = 0.15f;                      // Chỉnh lại một chút cho di chuyển mượt mà, đỡ bị giật
+    speed = 0.15f;
 }
 
 void Camera::handleMouse(float xOffset, float yOffset) {
@@ -46,7 +45,35 @@ void Camera::handleKeyboard(unsigned char key) {
         x += sgnX * speed;
         z += sgnZ * speed;
         break;
-    default:
+    case ' ':
+        y += speed;
+        break;
+    case 'q': case 'Q':
+        y -= speed;
+        break;
+    }
+}
+
+void Camera::handleSpecialKeyboard(int key) {
+    float sgnX = cos((yaw + 90.0f) * TO_RAD);
+    float sgnZ = sin((yaw + 90.0f) * TO_RAD);
+
+    switch (key) {
+    case GLUT_KEY_UP:
+        x += lx * speed;
+        z += lz * speed;
+        break;
+    case GLUT_KEY_DOWN:
+        x -= lx * speed;
+        z -= lz * speed;
+        break;
+    case GLUT_KEY_LEFT:
+        x -= sgnX * speed;
+        z -= sgnZ * speed;
+        break;
+    case GLUT_KEY_RIGHT:
+        x += sgnX * speed;
+        z += sgnZ * speed;
         break;
     }
 }

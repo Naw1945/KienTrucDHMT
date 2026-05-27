@@ -8,43 +8,38 @@
 #include "linedmodel.h"
 #include "texturemodel.h"
 #include "imageloader.h"
+#include "Camera.h"
 
-// --- BIẾN TRẠNG THÁI & HỆ GÓC NHÌN ---
-float lx = 0.0f, lz = 0.0f;
-float x = 0.0f, z = 5.0f;
-float angle = -1.5f;
-float speed = 0.1f;
-float heightAngle = 0.0f;
-float height_view = -1.0f;
-float cameraY = 1.0f;
-
+Camera cam;
 bool isSpinning = false;
 bool isLightOn = true;
 float fanAngle = 0.0f;
+bool ignoreMouseMotion = false;
 
-// --- KHAI BÁO MÔ HÌNH VẬT THỂ ---
-TextureModel sanNha, tranThuong, tranDen, tranDieuHoa, tuongGach, tuongCua, bangDen;
-TextureModel matBan, chanBan, chanGhe, matGhe, canhQuat, treoQuat;
+TextureModel sanNha, tranThuong, tranDen, tranDieuHoa, tuongGach, bangDen;
+TextureModel matBan, chanBan, chanGhe, matGhe, canhQuat, treoQuat, bauQuat;
+TextureModel tuongPhuTrai, tuongPhuPhai, tuongPhuTren, canhCuaChinh;
 
 Vector3 san_t, tran_t, bang_t;
-Vector3 tuongTruoc_t, tuongSau_t, tuongTrai_t, tuongPhai_t;
+Vector3 tuongFront_t, tuongSau_t, tuongTrai_t, tuongPhai_t;
 
-// --- KHAI BÁO HÀM ---
 void draw(TextureModel* m, Vector3 t);
 void taoKhoiHop(TextureModel& model, const char* bmpFile, float dx, float dy, float dz);
+void taoKhoiTruQuat(TextureModel& model, const char* bmpFile, float banKinh, float chieuCao, int soCanh);
 void drawHuongDan(float x, float y, const char* text);
 void makeRoomComponents();
 void veTranNha();
 void veCaiBan();
 void veCaiGhe();
 void veQuatTran(float x, float y, float z);
+void veVachTuongCoCua(float tx, float ty, float tz, float gocXoay);
 void renderScene(void);
 void processKeys(unsigned char key, int xx, int yy);
 void processSpecialKeys(int key, int xx, int yy);
+void passiveMouseMotion(int mx, int my);
 void resize(int width, int height);
 void init();
 
-// --- HÀM VẼ CO LẬP MA TRẬN ---
 void draw(TextureModel* m, Vector3 t) {
     glPushMatrix();
     glTranslatef(t.x, t.y, t.z);
@@ -52,7 +47,6 @@ void draw(TextureModel* m, Vector3 t) {
     glPopMatrix();
 }
 
-// --- HÀM KHỞI TẠO KHỐI HỘP DÁN TEXTURE ---
 void taoKhoiHop(TextureModel& model, const char* bmpFile, float dx, float dy, float dz) {
     model.clear();
     model.setTextureFromBMP(bmpFile);
@@ -83,7 +77,42 @@ void taoKhoiHop(TextureModel& model, const char* bmpFile, float dx, float dy, fl
     model.addQuad(quadIndex(4, 5, 1, 0, tc0, tc1, tc2, tc3));
 }
 
-// --- KHỞI TẠO VẬT THỂ PHÒNG HỌC ---
+void taoKhoiTruQuat(TextureModel& model, const char* bmpFile, float banKinh, float chieuCao, int soCanh) {
+    model.clear();
+    model.setTextureFromBMP(bmpFile);
+
+    float hMax = chieuCao / 2.0f;
+    float hMin = -chieuCao / 2.0f;
+
+    for (int i = 0; i < soCanh; i++) {
+        float alpha = i * (2 * PI / soCanh);
+        float x = cos(alpha) * banKinh;
+        float z = sin(alpha) * banKinh;
+        model.addVertex(point3(x, hMax, z));
+    }
+
+    for (int i = 0; i < soCanh; i++) {
+        float alpha = i * (2 * PI / soCanh);
+        float x = cos(alpha) * banKinh;
+        float z = sin(alpha) * banKinh;
+        model.addVertex(point3(x, hMin, z));
+    }
+
+    TexCoord2 tc0 = texCoord2(0.0f, 0.0f);
+    TexCoord2 tc1 = texCoord2(1.0f, 0.0f);
+    TexCoord2 tc2 = texCoord2(1.0f, 1.0f);
+    TexCoord2 tc3 = texCoord2(0.0f, 1.0f);
+
+    for (int i = 0; i < soCanh; i++) {
+        int next = (i + 1) % soCanh;
+        int trenHienTai = i;
+        int trenTiepTheo = next;
+        int duoiHienTai = i + soCanh;
+        int duoiTiepTheo = next + soCanh;
+        model.addQuad(quadIndex(trenHienTai, duoiHienTai, duoiTiepTheo, trenTiepTheo, tc0, tc1, tc2, tc3));
+    }
+}
+
 void makeRoomComponents() {
     float tileCount = 15.0f;
 
@@ -108,15 +137,12 @@ void makeRoomComponents() {
     tuongGach.addVertex(point3(-4.5f, 1.5f, 0.0f));
     tuongGach.addQuad(quadIndex(0, 1, 2, 3, texCoord2(0, 3), texCoord2(4, 3), texCoord2(4, 0), texCoord2(0, 0)));
 
-    tuongCua.clear();
-    tuongCua.setTextureFromBMP("data/tuong.bmp");
-    tuongCua.addVertex(point3(-4.5f, -1.5f, 0.0f));
-    tuongCua.addVertex(point3(4.5f, -1.5f, 0.0f));
-    tuongCua.addVertex(point3(4.5f, 1.5f, 0.0f));
-    tuongCua.addVertex(point3(-4.5f, 1.5f, 0.0f));
-    tuongCua.addQuad(quadIndex(0, 1, 2, 3, texCoord2(0, 1), texCoord2(1, 1), texCoord2(1, 0), texCoord2(0, 0)));
+    taoKhoiHop(tuongPhuTrai, "data/tuong.bmp", 4.0f, 3.0f, 0.02f);
+    taoKhoiHop(tuongPhuPhai, "data/tuong.bmp", 3.5f, 3.0f, 0.02f);
+    taoKhoiHop(tuongPhuTren, "data/tuong.bmp", 1.5f, 0.8f, 0.02f);
+    taoKhoiHop(canhCuaChinh, "data/door2.bmp", 1.5f, 2.2f, 0.01f);
 
-    tuongTruoc_t = point3(0.0f, 0.0f, -4.5f);
+    tuongFront_t = point3(0.0f, 0.0f, -4.5f);
     tuongSau_t = point3(0.0f, 0.0f, 4.5f);
     tuongTrai_t = point3(-4.5f, 0.0f, 0.0f);
     tuongPhai_t = point3(4.5f, 0.0f, 0.0f);
@@ -135,10 +161,10 @@ void makeRoomComponents() {
     taoKhoiHop(matGhe, "data/matban3.bmp", 0.4f, 0.04f, 0.4f);
     taoKhoiHop(chanGhe, "data/thanban.bmp", 0.04f, 0.4f, 0.04f);
     taoKhoiHop(canhQuat, "data/den.bmp", 0.7f, 0.01f, 0.08f);
-    taoKhoiHop(treoQuat, "data/thanban.bmp", 0.04f, 0.4f, 0.04f);
+    taoKhoiHop(treoQuat, "data/thanban.bmp", 0.04f, 0.3f, 0.04f);
+    taoKhoiTruQuat(bauQuat, "data/thanban.bmp", 0.15f, 0.075f, 30);
 }
 
-// --- HÀM VẼ HỆ THỐNG TRẦN Ô MA TRẬN ---
 void veTranNha() {
     float size = 0.6f;
 
@@ -168,7 +194,34 @@ void veTranNha() {
     }
 }
 
-// --- CÁC HÀM VẼ NỘI THẤT ---
+void veVachTuongCoCua(float tx, float ty, float tz, float gocXoay) {
+    glPushMatrix();
+    glTranslatef(tx, ty, tz);
+    glRotatef(gocXoay, 0.0f, 1.0f, 0.0f);
+
+    glPushMatrix();
+    glTranslatef(-2.5f, 0.0f, 0.0f);
+    tuongPhuTrai.draw();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(2.75f, 0.0f, 0.0f);
+    tuongPhuPhai.draw();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(0.25f, 1.1f, 0.0f);
+    tuongPhuTren.draw();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(0.25f, -0.4f, 0.0f);
+    canhCuaChinh.draw();
+    glPopMatrix();
+
+    glPopMatrix();
+}
+
 void veCaiBan() {
     glPushMatrix();
     glTranslatef(0.0f, -0.8f, 0.0f);
@@ -202,32 +255,36 @@ void veCaiGhe() {
 }
 
 void veQuatTran(float x, float y, float z) {
+    float H_thanh = 0.3f;
+    float H_bau = 0.08f;
+
     glPushMatrix();
-    glTranslatef(x, 1.4f, z);
+    float y_thanh = y + (H_bau / 2.0f) + (H_thanh / 2.0f);
+    glTranslatef(x, y_thanh, z);
     treoQuat.draw();
     glPopMatrix();
 
     glPushMatrix();
     glTranslatef(x, y, z);
     glRotatef(fanAngle, 0.0f, 1.0f, 0.0f);
+
+    bauQuat.draw();
+
     for (int i = 0; i < 3; i++) {
         glPushMatrix();
         glRotatef(i * 120.0f, 0.0f, 1.0f, 0.0f);
-        glTranslatef(0.35f, -0.1f, 0.0f);
+        glTranslatef(0.4f, -0.04f, 0.0f);
         canhQuat.draw();
         glPopMatrix();
     }
     glPopMatrix();
 }
 
-// --- HÀM HIỂN THỊ CHÍNH ---
 void renderScene(void) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
-    gluLookAt(x, cameraY, z,
-        x + lx, cameraY + sin(heightAngle), z + lz,
-        0.0f, 1.0f, 0.0f);
+    cam.apply();
 
     glEnable(GL_TEXTURE_2D);
 
@@ -237,12 +294,22 @@ void renderScene(void) {
     draw(&sanNha, san_t);
     veTranNha();
 
-    draw(&tuongGach, tuongTruoc_t);
+    draw(&tuongGach, tuongFront_t);
     draw(&bangDen, bang_t);
 
-    glPushMatrix(); glTranslatef(tuongSau_t.x, tuongSau_t.y, tuongSau_t.z); glRotatef(180, 0, 1, 0); tuongCua.draw(); glPopMatrix();
-    glPushMatrix(); glTranslatef(tuongTrai_t.x, tuongTrai_t.y, tuongTrai_t.z); glRotatef(90, 0, 1, 0); tuongCua.draw(); glPopMatrix();
-    glPushMatrix(); glTranslatef(tuongPhai_t.x, tuongPhai_t.y, tuongPhai_t.z); glRotatef(-90, 0, 1, 0); tuongGach.draw(); glPopMatrix();
+    glPushMatrix();
+    glTranslatef(tuongSau_t.x, tuongSau_t.y, tuongSau_t.z);
+    glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
+    tuongGach.draw();
+    glPopMatrix();
+
+    veVachTuongCoCua(tuongTrai_t.x, tuongTrai_t.y, tuongTrai_t.z, 90.0f);
+
+    glPushMatrix();
+    glTranslatef(tuongPhai_t.x, tuongPhai_t.y, tuongPhai_t.z);
+    glRotatef(-90.0f, 0.0f, 1.0f, 0.0f);
+    tuongGach.draw();
+    glPopMatrix();
 
     veQuatTran(0.0f, 1.3f, -1.5f);
     veQuatTran(0.0f, 1.3f, 1.5f);
@@ -267,17 +334,16 @@ void renderScene(void) {
         if (fanAngle > 360.0f) fanAngle -= 360.0f;
     }
 
-    drawHuongDan(10, 690, "W / S    : Tang / Giam do cao goc nhin");
-    drawHuongDan(10, 665, "A / D    : Quay trai / phai camera");
-    drawHuongDan(10, 640, "SPACE / Q: Tang / Giam do cao cua camera");
-    drawHuongDan(10, 615, "F        : Bat / Tat quay quat tran");
-    drawHuongDan(10, 590, "L        : Bat / Tat thap sang phong hoc");
-    drawHuongDan(10, 565, "ESC      : Thoat ung dung");
+    drawHuongDan(10, 690, "CHUOT    : Thay doi huong nhin");
+    drawHuongDan(10, 665, "W/A/S/D  : ");
+    drawHuongDan(10, 640, "MUI TEN  : Di chuyen ");
+    drawHuongDan(10, 615, "SPACE / Q: Nang / Giam do cao camera");
+    drawHuongDan(10, 590, "F        : Bat / Tat quat tran");
+    drawHuongDan(10, 565, "L        : Bat / tat den phong hoc");
 
     glutSwapBuffers();
 }
 
-// --- HÀM VẼ CHỮ HƯỚNG DẪN 2D ---
 void drawHuongDan(float x, float y, const char* text) {
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -301,46 +367,43 @@ void drawHuongDan(float x, float y, const char* text) {
     glMatrixMode(GL_MODELVIEW);
 }
 
-// --- XỬ LÝ SỰ KIỆN BÀN PHÍM ---
 void processKeys(unsigned char key, int xx, int yy) {
     switch (key) {
     case 'f': case 'F': isSpinning = !isSpinning; break;
     case 'l': case 'L': isLightOn = !isLightOn; break;
-    case 'w':
-        if (heightAngle < PI / 2) { heightAngle += 0.05f; height_view = sin(heightAngle); }
+    case 27: exit(0); break;
+    default:
+        cam.handleKeyboard(key);
         break;
-    case 's':
-        if (heightAngle > (-PI / 2)) { heightAngle -= 0.05f; height_view = sin(heightAngle) - 1.0f; }
-        break;
-    case 'a':
-        angle -= 0.03f; lx = cos(angle); lz = sin(angle);
-        break;
-    case 'd':
-        angle += 0.03f; lx = cos(angle); lz = sin(angle);
-        break;
-    case ' ':
-        cameraY += 0.1f;
-        break;
-    case 'q':
-        cameraY -= 0.1f;
-        break;
-    case 27: exit(0);
     }
     glutPostRedisplay();
 }
 
 void processSpecialKeys(int key, int xx, int yy) {
-    float fraction = speed;
-    switch (key) {
-    case GLUT_KEY_LEFT:  x += lz * fraction; z -= lx * fraction; break;
-    case GLUT_KEY_RIGHT: x -= lz * fraction; z += lx * fraction; break;
-    case GLUT_KEY_UP:    x += lx * fraction; z += lz * fraction; break;
-    case GLUT_KEY_DOWN:  x -= lx * fraction; z -= lz * fraction; break;
+    cam.handleSpecialKeyboard(key);
+    glutPostRedisplay();
+}
+
+void passiveMouseMotion(int mx, int my) {
+    if (ignoreMouseMotion) {
+        ignoreMouseMotion = false;
+        return;
+    }
+
+    int centerX = 1280 / 2;
+    int centerY = 720 / 2;
+
+    float xOffset = (float)(mx - centerX);
+    float yOffset = (float)(centerY - my);
+
+    if (xOffset != 0 || yOffset != 0) {
+        cam.handleMouse(xOffset, yOffset);
+        ignoreMouseMotion = true;
+        glutWarpPointer(centerX, centerY);
     }
     glutPostRedisplay();
 }
 
-// --- KHỞI TẠO HỆ THỐNG CỬA SỔ VÀ ĐỒ HỌA ---
 void resize(int width, int height) {
     if (height == 0) height = 1;
     glViewport(0, 0, width, height);
@@ -351,9 +414,8 @@ void resize(int width, int height) {
 
 void init() {
     glClearColor(0.0, 0.0, 0.0, 1.0);
-    lx = cos(angle);
-    lz = sin(angle);
     makeRoomComponents();
+    glutSetCursor(GLUT_CURSOR_NONE);
 }
 
 int main(int argc, char** argv) {
@@ -367,10 +429,12 @@ int main(int argc, char** argv) {
     glutReshapeFunc(resize);
     glutKeyboardFunc(processKeys);
     glutSpecialFunc(processSpecialKeys);
+    glutPassiveMotionFunc(passiveMouseMotion);
     glutDisplayFunc(renderScene);
     glutIdleFunc(renderScene);
     init();
 
+    glutWarpPointer(1280 / 2, 720 / 2);
     glutMainLoop();
     return 0;
 }
