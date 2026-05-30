@@ -254,30 +254,100 @@ void veCaiGhe() {
     }
 }
 
-void veQuatTran(float x, float y, float z) {
-    float H_thanh = 0.3f;
-    float H_bau = 0.08f;
+// --------------------------
+// New immediate-mode fan
+// --------------------------
+void drawUnitBox(float w, float h, float d, float r, float g, float b) {
+    glColor3f(r, g, b);
 
-    glPushMatrix();
-    float y_thanh = y + (H_bau / 2.0f) + (H_thanh / 2.0f);
-    glTranslatef(x, y_thanh, z);
-    treoQuat.draw();
-    glPopMatrix();
+    glBegin(GL_QUADS);
 
+    // top
+    glVertex3f(0, h, 0);
+    glVertex3f(w, h, 0);
+    glVertex3f(w, h, d);
+    glVertex3f(0, h, d);
+
+    // bottom
+    glVertex3f(0, 0, 0);
+    glVertex3f(0, 0, d);
+    glVertex3f(w, 0, d);
+    glVertex3f(w, 0, 0);
+
+    // front
+    glVertex3f(0, 0, d);
+    glVertex3f(w, 0, d);
+    glVertex3f(w, h, d);
+    glVertex3f(0, h, d);
+
+    // back
+    glVertex3f(0, 0, 0);
+    glVertex3f(0, h, 0);
+    glVertex3f(w, h, 0);
+    glVertex3f(w, 0, 0);
+
+    // left
+    glVertex3f(0, 0, 0);
+    glVertex3f(0, 0, d);
+    glVertex3f(0, h, d);
+    glVertex3f(0, h, 0);
+
+    // right
+    glVertex3f(w, 0, 0);
+    glVertex3f(w, h, 0);
+    glVertex3f(w, h, d);
+    glVertex3f(w, 0, d);
+
+    glEnd();
+}
+
+void drawCeilingFan(float x, float y, float z, float rotationAngle) {
     glPushMatrix();
+    glPushAttrib(GL_ENABLE_BIT);
+    glDisable(GL_TEXTURE_2D);
+
     glTranslatef(x, y, z);
-    glRotatef(fanAngle, 0.0f, 1.0f, 0.0f);
 
-    bauQuat.draw();
+    // trục quạt (rod) – giống vidu11_1
+    drawUnitBox(0.04f, 0.4f, 0.04f, 0.6f, 0.6f, 0.6f);
 
+    // dịch vào tâm trục rồi mới quay
+    glTranslatef(0.02f, 0.0f, 0.02f);
+    glRotatef(rotationAngle, 0.0f, 1.0f, 0.0f);
+
+    // tâm quạt (hub disc)
+    // Dịch xuống để tránh Z-fighting với mặt trần
+    glTranslatef(0.0f, -0.02f, 0.0f);
+
+    glColor3f(0.4f, 0.4f, 0.4f);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(0.0f, 0.0f, 0.0f);
+    float fanRadius = 0.15f;
+    for (int i = 0; i <= 30; i++) {
+        float angle = i * (2.0f * 3.14159f / 30.0f);
+        glVertex3f(fanRadius * cos(angle), 0.0f, fanRadius * sin(angle));
+    }
+    glEnd();
+
+    // 3 cánh quạt
     for (int i = 0; i < 3; i++) {
         glPushMatrix();
         glRotatef(i * 120.0f, 0.0f, 1.0f, 0.0f);
-        glTranslatef(0.4f, -0.04f, 0.0f);
-        canhQuat.draw();
+        glTranslatef(0.15f, -0.005f, -0.06f);
+        drawUnitBox(0.8f, 0.01f, 0.12f, 0.5f, 0.5f, 0.5f);
         glPopMatrix();
     }
+
+    glPopAttrib();
     glPopMatrix();
+}
+// --------------------------
+// end new fan
+// --------------------------
+
+void veQuatTran(float x, float y, float z) {
+    // Thiết kế quạt theo vidu11_1: trục + tâm + 3 cánh, tất cả trong drawCeilingFan
+    drawCeilingFan(x, y, z, fanAngle);
 }
 
 void renderScene(void) {
