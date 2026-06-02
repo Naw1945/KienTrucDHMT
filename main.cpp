@@ -25,18 +25,19 @@ TextureModel matBan, chanBan, chanGhe, matGhe;
 TextureModel tuongPhuTrai, tuongPhuPhai, tuongPhuTren, canhCuaChinh;
 TextureModel bucGiang;
 TextureModel oCuaSo, tuongCuaSoTren, tuongCuaSoDuoi, tuongCuaSoBien;
+TextureModel quatTruc, quatBau, quatCanh;
 Vector3 san_t, tran_t, bang_t;
 Vector3 tuongFront_t, tuongSau_t, tuongTrai_t, tuongPhai_t;
 
 void draw(TextureModel* m, Vector3 t);
 void taoKhoiHop(TextureModel& model, const char* bmpFile, float dx, float dy, float dz);
+void taoBauQuatTexture(TextureModel& model, const char* bmpFile, float banKinh, float chieuCao, int soCanh);
 void drawHuongDan(float x, float y, const char* text);
 void makeRoomComponents();
 void veBucGiang();
 void veTranNha();
 void veCaiBan();
 void veCaiGhe();
-void drawCeilingFan(float x, float y, float z, float rotationAngle);
 void veQuatTran(float x, float y, float z);
 void veVachTuongCoCua(float tx, float ty, float tz, float gocXoay);
 void veVachTuongCoCuaSo(float tx, float ty, float tz, float gocXoay);
@@ -85,6 +86,53 @@ void taoKhoiHop(TextureModel& model, const char* bmpFile, float dx, float dy, fl
     model.addQuad(quadIndex(4, 5, 1, 0, tc0, tc1, tc2, tc3));
 }
 
+void taoBauQuatTexture(TextureModel& model, const char* bmpFile, float banKinh, float chieuCao, int soCanh) {
+    model.clear();
+    model.setTextureFromBMP(bmpFile);
+
+    float hMax = 0.0f;
+    float hMin = -chieuCao;
+
+    model.addVertex(point3(0.0f, hMax, 0.0f));
+    model.addVertex(point3(0.0f, hMin, 0.0f));
+
+    for (int i = 0; i < soCanh; i++) {
+        float alpha = i * (2.0f * PI / soCanh);
+        float x = cos(alpha) * banKinh;
+        float z = sin(alpha) * banKinh;
+        model.addVertex(point3(x, hMax, z));
+    }
+
+    for (int i = 0; i < soCanh; i++) {
+        float alpha = i * (2.0f * PI / soCanh);
+        float x = cos(alpha) * banKinh;
+        float z = sin(alpha) * banKinh;
+        model.addVertex(point3(x, hMin, z));
+    }
+
+    TexCoord2 tcMặcĐịnh = texCoord2(0.0f, 0.0f);
+
+    for (int i = 0; i < soCanh; i++) {
+        int next = (i + 1) % soCanh;
+        int vTopHienTai = 2 + i;
+        int vTopTiepTheo = 2 + next;
+        int vBotHienTai = 2 + soCanh + i;
+        int vBotTiepTheo = 2 + soCanh + next;
+
+        model.addQuad(quadIndex(vTopHienTai, vBotHienTai, vBotTiepTheo, vTopTiepTheo, tcMặcĐịnh, tcMặcĐịnh, tcMặcĐịnh, tcMặcĐịnh));
+        model.addTriangle(triangleIndex(0, vTopTiepTheo, vTopHienTai, tcMặcĐịnh, tcMặcĐịnh, tcMặcĐịnh));
+
+        float alphaHienTai = i * (2.0f * PI / soCanh);
+        float alphaTiepTheo = next * (2.0f * PI / soCanh);
+
+        TexCoord2 tcCenter = texCoord2(0.5f, 0.5f);
+        TexCoord2 tcHienTai = texCoord2(cos(alphaHienTai) * 0.5f + 0.5f, sin(alphaHienTai) * 0.5f + 0.5f);
+        TexCoord2 tcTiepTheo = texCoord2(cos(alphaTiepTheo) * 0.5f + 0.5f, sin(alphaTiepTheo) * 0.5f + 0.5f);
+
+        model.addTriangle(triangleIndex(1, vBotHienTai, vBotTiepTheo, tcCenter, tcHienTai, tcTiepTheo));
+    }
+}
+
 void makeRoomComponents() {
     sanNha.clear();
     sanNha.setTextureFromBMP("data/sannha3.bmp");
@@ -108,8 +156,8 @@ void makeRoomComponents() {
     tuongGach.addVertex(point3(-4.5f, 1.5f, 0.0f));
     tuongGach.addQuad(quadIndex(0, 1, 2, 3, texCoord2(0, 3), texCoord2(4, 3), texCoord2(4, 0), texCoord2(0, 0)));
 
-    taoKhoiHop(tuongPhuTrai, "data/tuong.bmp", 4.7f, 3.0f, 0.02f);
-    taoKhoiHop(tuongPhuPhai, "data/tuong.bmp", 2.2f, 3.0f, 0.02f);
+    taoKhoiHop(tuongPhuTrai, "data/tuong.bmp", 2.2f, 3.0f, 0.02f);
+    taoKhoiHop(tuongPhuPhai, "data/tuong.bmp", 4.7f, 3.0f, 0.02f);
     taoKhoiHop(tuongPhuTren, "data/tuong.bmp", 1.5f, 0.8f, 0.02f);
     taoKhoiHop(canhCuaChinh, "data/door2.bmp", 1.5f, 2.2f, 0.01f);
 
@@ -136,6 +184,10 @@ void makeRoomComponents() {
     taoKhoiHop(chanBan, "data/thanban.bmp", 0.04f, 0.7f, 0.04f);
     taoKhoiHop(matGhe, "data/matban3.bmp", 0.4f, 0.04f, 0.4f);
     taoKhoiHop(chanGhe, "data/thanban.bmp", 0.04f, 0.4f, 0.04f);
+
+    taoKhoiHop(quatTruc, "data/thanban.bmp", 0.04f, 0.4f, 0.04f);
+    taoBauQuatTexture(quatBau, "data/bauquat.bmp", 0.16f, 0.05f, 30);
+    taoKhoiHop(quatCanh, "data/canhquat.bmp", 0.7f, 0.01f, 0.12f);
 }
 
 void veBucGiang() {
@@ -185,22 +237,22 @@ void veVachTuongCoCua(float tx, float ty, float tz, float gocXoay) {
     glRotatef(gocXoay, 0.0f, 1.0f, 0.0f);
 
     glPushMatrix();
-    glTranslatef(-1.85f, 0.0f, 0.0f);
+    glTranslatef(-3.1f, 0.0f, 0.0f);
     tuongPhuTrai.draw();
     glPopMatrix();
 
     glPushMatrix();
-    glTranslatef(3.1f, 0.0f, 0.0f);
+    glTranslatef(1.85f, 0.0f, 0.0f);
     tuongPhuPhai.draw();
     glPopMatrix();
 
     glPushMatrix();
-    glTranslatef(1.25f, 1.1f, 0.0f);
+    glTranslatef(-1.25f, 1.1f, 0.0f);
     tuongPhuTren.draw();
     glPopMatrix();
 
     glPushMatrix();
-    glTranslatef(1.25f, -0.4f, 0.0f);
+    glTranslatef(-1.25f, -0.4f, 0.0f);
     canhCuaChinh.draw();
     glPopMatrix();
 
@@ -275,68 +327,27 @@ void veCaiGhe() {
     }
 }
 
-void drawCeilingFan(float x, float y, float z, float rotationAngle) {
+void veQuatTran(float x, float y, float z) {
     glPushMatrix();
-    glDisable(GL_TEXTURE_2D);
-
     glTranslatef(x, y, z);
 
-    glColor3f(0.6f, 0.6f, 0.6f);
     glPushMatrix();
     glTranslatef(0.0f, 0.2f, 0.0f);
-    glScalef(0.04f, 0.4f, 0.04f);
-    glutSolidCube(1.0f);
+    quatTruc.draw();
     glPopMatrix();
 
-    glRotatef(rotationAngle, 0.0f, 1.0f, 0.0f);
+    glRotatef(fanAngle, 0.0f, 1.0f, 0.0f);
+    quatBau.draw();
 
-    float fanRadius = 0.16f;
-    float fanHeight = 0.05f;
-    glColor3f(0.4f, 0.4f, 0.4f);
-
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(0.0f, 0.0f, 0.0f);
-    for (int i = 0; i <= 30; i++) {
-        float angle = i * (2.0f * PI / 30.0f);
-        glVertex3f(fanRadius * cos(angle), 0.0f, fanRadius * sin(angle));
-    }
-    glEnd();
-
-    glBegin(GL_QUAD_STRIP);
-    for (int i = 0; i <= 30; i++) {
-        float angle = i * (2.0f * PI / 30.0f);
-        float cx = fanRadius * cos(angle);
-        float cz = fanRadius * sin(angle);
-        glVertex3f(cx, 0.0f, cz);
-        glVertex3f(cx, -fanHeight, cz);
-    }
-    glEnd();
-
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(0.0f, -fanHeight, 0.0f);
-    for (int i = 0; i <= 30; i++) {
-        float angle = i * (2.0f * PI / 30.0f);
-        glVertex3f(fanRadius * cos(angle), -fanHeight, fanRadius * sin(angle));
-    }
-    glEnd();
-
-    glColor3f(0.5f, 0.5f, 0.5f);
     for (int i = 0; i < 3; i++) {
         glPushMatrix();
         glRotatef(i * 120.0f, 0.0f, 1.0f, 0.0f);
-        glTranslatef(0.42f, -fanHeight / 2.0f, 0.0f);
-        glScalef(0.7f, 0.01f, 0.12f);
-        glutSolidCube(1.0f);
+        glTranslatef(0.42f, -0.025f, 0.0f);
+        quatCanh.draw();
         glPopMatrix();
     }
 
-    glEnable(GL_TEXTURE_2D);
-    glColor3f(1.0f, 1.0f, 1.0f);
     glPopMatrix();
-}
-
-void veQuatTran(float x, float y, float z) {
-    drawCeilingFan(x, y, z, fanAngle);
 }
 
 void renderScene(void) {
