@@ -23,7 +23,7 @@ bool ignoreMouseMotion = false;
 TextureModel sanNha, tranThuong, tranDen, tranDieuHoa, tuongGach, bangDen;
 TextureModel matBan, chanBan, chanGhe, matGhe;
 TextureModel tuongPhuTrai, tuongPhuPhai, tuongPhuTren, canhCuaChinh;
-TextureModel bucGiang;
+TextureModel bucPhatBieu;
 TextureModel oCuaSo, tuongCuaSoTren, tuongCuaSoDuoi, tuongCuaSoBien;
 TextureModel quatTruc, quatBau, quatCanh;
 Vector3 san_t, tran_t, bang_t;
@@ -34,7 +34,6 @@ void taoKhoiHop(TextureModel& model, const char* bmpFile, float dx, float dy, fl
 void taoBauQuatTexture(TextureModel& model, const char* bmpFile, float banKinh, float chieuCao, int soCanh);
 void drawHuongDan(float x, float y, const char* text);
 void makeRoomComponents();
-void veBucGiang();
 void veTranNha();
 void veCaiBan();
 void veCaiGhe();
@@ -146,7 +145,9 @@ void makeRoomComponents() {
     taoKhoiHop(tranThuong, "data/trannha.bmp", 0.6f, 0.01f, 0.6f);
     taoKhoiHop(tranDen, "data/den.bmp", 0.6f, 0.01f, 0.6f);
     taoKhoiHop(tranDieuHoa, "data/dieuhoa.bmp", 0.6f, 0.01f, 0.6f);
-    taoKhoiHop(bucGiang, "data/matban3.bmp", 7.0f, 0.2f, 1.5f);
+
+    // Khởi tạo bục phát biểu cao 1m, rộng 70cm, sâu 50cm
+    taoKhoiHop(bucPhatBieu, "data/matban3.bmp", 0.7f, 1.0f, 0.5f);
 
     tuongGach.clear();
     tuongGach.setTextureFromBMP("data/tuong.bmp");
@@ -188,13 +189,6 @@ void makeRoomComponents() {
     taoKhoiHop(quatTruc, "data/thanban.bmp", 0.04f, 0.4f, 0.04f);
     taoBauQuatTexture(quatBau, "data/bauquat.bmp", 0.16f, 0.05f, 30);
     taoKhoiHop(quatCanh, "data/canhquat.bmp", 0.7f, 0.01f, 0.12f);
-}
-
-void veBucGiang() {
-    glPushMatrix();
-    glTranslatef(-0.25f, -1.4f, -4.2f);
-    bucGiang.draw();
-    glPopMatrix();
 }
 
 void veTranNha() {
@@ -373,7 +367,7 @@ void renderScene(void) {
     tuongGach.draw();
     glPopMatrix();
 
-    veVachTuongCoCua(tuongTrai_t.x, tuongTrai_t.y, tuongTrai_t.z, 90.0f);
+    veVachTuongCoCua(tuongTrai_t.x, tuongTrai_t.y, tuongTrai_t.z, -90.0f);
     veVachTuongCoCuaSo(tuongPhai_t.x, tuongPhai_t.y, tuongPhai_t.z, -90.0f);
 
     veQuatTran(-1.8f, 1.3f, -1.5f);
@@ -384,8 +378,10 @@ void renderScene(void) {
     if (isLightOn) glColor3f(1.0f, 1.0f, 1.0f);
     else glColor3f(0.2f, 0.2f, 0.2f);
 
+    // Vẽ bàn giáo viên xoay ngược hướng 180 độ
     glPushMatrix();
     glTranslatef(2.2f, 0.0f, -3.2f);
+    glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
     veCaiBan();
     glPushMatrix();
     glTranslatef(0.0f, 0.0f, 0.45f);
@@ -393,6 +389,13 @@ void renderScene(void) {
     glPopMatrix();
     glPopMatrix();
 
+    // Vẽ bục phát biểu cao 1m cạnh bàn giáo viên (gần sát tường phải)
+    glPushMatrix();
+    glTranslatef(3.3f, -1.0f, -3.2f); // y = -1.0f giúp đáy bục đặt khít trên sàn nhà
+    bucPhatBieu.draw();
+    glPopMatrix();
+
+    // Khôi phục mảng 3 cột ban đầu để giữ lại các dãy bàn ở giữa phòng
     float dãy_X[3] = { -2.3f, 0.8f, 3.9f };
     int count = 0;
 
@@ -414,6 +417,11 @@ void renderScene(void) {
                 continue;
             }
 
+            // CHỈ XÓA dãy bàn ghế thò ra ngoài sát cửa sổ (col == 2 ứng với vị trí dịch phải +0.6f)
+            if (col == 2) {
+                continue;
+            }
+
             glPushMatrix();
             glTranslatef(dãy_X[col] + 0.6f, 0.0f, zb);
             veCaiBan();
@@ -425,8 +433,6 @@ void renderScene(void) {
             count++;
         }
     }
-
-    veBucGiang();
 
     drawHuongDan(10, 640, "MUI TEN  : Di chuyen ");
     drawHuongDan(10, 615, "SPACE / Q: Nang / Giam do cao camera");
