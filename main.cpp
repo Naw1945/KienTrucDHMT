@@ -176,7 +176,7 @@ void makeRoomComponents() {
     taoKhoiHop(khungNgangDuoi, "data/khungcuaso.bmp", 0.90f, 0.04f, 0.02f);
 
     taoKhoiHop(remCuaSo, "data/rem.bmp", 0.86f, 1.1f, 0.005f);
-    taoKhoiHop(phongCanh, "data/phongcanh.bmp", 50.0f, 50.0f, 0.01f);
+    taoKhoiHop(phongCanh, "data/phongcanh.bmp", 100.0f, 50.0f, 0.01f);
 
     tuongFront_t = point3(0.0f, 0.0f, -4.2f);
     tuongSau_t = point3(0.0f, 0.0f, 4.2f);
