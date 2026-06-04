@@ -137,14 +137,12 @@
     <ClCompile Include="imageloader.cpp" />
     <ClCompile Include="linedmodel.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Objects.cpp" />
     <ClCompile Include="texturemodel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="imageloader.h" />
     <ClInclude Include="linedmodel.h" />
-    <ClInclude Include="Objects.h" />
     <ClInclude Include="texturemodel.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

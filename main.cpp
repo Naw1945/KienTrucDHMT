@@ -25,7 +25,12 @@ TextureModel matBan, chanBan, chanGhe, matGhe;
 TextureModel tuongPhuTrai, tuongPhuPhai, tuongPhuTren, canhCuaChinh;
 TextureModel bucPhatBieu;
 TextureModel oCuaSo, tuongCuaSoTren, tuongCuaSoDuoi, tuongCuaSoBien;
+TextureModel remCuaSo;
 TextureModel quatTruc, quatBau, quatCanh;
+
+TextureModel khungDocTrai, khungDocPhai, khungNgangTren, khungNgangDuoi;
+TextureModel phongCanh;
+
 Vector3 san_t, tran_t, bang_t;
 Vector3 tuongFront_t, tuongSau_t, tuongTrai_t, tuongPhai_t;
 
@@ -146,7 +151,6 @@ void makeRoomComponents() {
     taoKhoiHop(tranDen, "data/den.bmp", 0.6f, 0.01f, 0.6f);
     taoKhoiHop(tranDieuHoa, "data/dieuhoa.bmp", 0.6f, 0.01f, 0.6f);
 
-    // Khởi tạo bục phát biểu cao 1m, rộng 70cm, sâu 50cm
     taoKhoiHop(bucPhatBieu, "data/matban3.bmp", 0.7f, 1.0f, 0.5f);
 
     tuongGach.clear();
@@ -165,7 +169,14 @@ void makeRoomComponents() {
     taoKhoiHop(tuongCuaSoBien, "data/tuong.bmp", 0.55f, 3.0f, 0.02f);
     taoKhoiHop(tuongCuaSoTren, "data/tuong.bmp", 7.3f, 0.7f, 0.02f);
     taoKhoiHop(tuongCuaSoDuoi, "data/tuong.bmp", 7.3f, 0.9f, 0.02f);
-    taoKhoiHop(oCuaSo, "data/door2.bmp", 0.98f, 1.4f, 0.01f);
+
+    taoKhoiHop(khungDocTrai, "data/khungcuaso.bmp", 0.04f, 1.4f, 0.02f);
+    taoKhoiHop(khungDocPhai, "data/khungcuaso.bmp", 0.04f, 1.4f, 0.02f);
+    taoKhoiHop(khungNgangTren, "data/khungcuaso.bmp", 0.90f, 0.04f, 0.02f);
+    taoKhoiHop(khungNgangDuoi, "data/khungcuaso.bmp", 0.90f, 0.04f, 0.02f);
+
+    taoKhoiHop(remCuaSo, "data/rem.bmp", 0.86f, 1.1f, 0.005f);
+    taoKhoiHop(phongCanh, "data/phongcanh.bmp", 50.0f, 50.0f, 0.01f);
 
     tuongFront_t = point3(0.0f, 0.0f, -4.2f);
     tuongSau_t = point3(0.0f, 0.0f, 4.2f);
@@ -259,6 +270,11 @@ void veVachTuongCoCuaSo(float tx, float ty, float tz, float gocXoay) {
     glRotatef(gocXoay, 0.0f, 1.0f, 0.0f);
 
     glPushMatrix();
+    glTranslatef(0.0f, 0.0f, -5.5f);
+    phongCanh.draw();
+    glPopMatrix();
+
+    glPushMatrix();
     glTranslatef(-3.925f, 0.0f, 0.0f);
     tuongCuaSoBien.draw();
     glPopMatrix();
@@ -278,12 +294,45 @@ void veVachTuongCoCuaSo(float tx, float ty, float tz, float gocXoay) {
     tuongCuaSoDuoi.draw();
     glPopMatrix();
 
-    for (int i = 0; i < 7; i++) {
-        float cx = -2.94f + i * 0.98f;
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    for (int i = 0; i < 8; i++) {
+        float cx = -3.15f + i * 0.90f;
+
         glPushMatrix();
-        glTranslatef(cx, 0.1f, 0.0f);
-        oCuaSo.draw();
+        glTranslatef(cx - 0.43f, 0.1f, 0.001f);
+        khungDocTrai.draw();
         glPopMatrix();
+
+        glPushMatrix();
+        glTranslatef(cx + 0.43f, 0.1f, 0.001f);
+        khungDocPhai.draw();
+        glPopMatrix();
+
+        glPushMatrix();
+        glTranslatef(cx, 0.78f, 0.001f);
+        khungNgangTren.draw();
+        glPopMatrix();
+
+        glPushMatrix();
+        glTranslatef(cx, -0.58f, 0.001f);
+        khungNgangDuoi.draw();
+        glPopMatrix();
+
+        glPushMatrix();
+        glTranslatef(cx, 0.25f, 0.015f);
+        remCuaSo.draw();
+        glPopMatrix();
+    }
+
+    glDisable(GL_BLEND);
+
+    if (isLightOn) {
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    }
+    else {
+        glColor4f(0.2f, 0.2f, 0.2f, 1.0f);
     }
 
     glPopMatrix();
@@ -378,7 +427,6 @@ void renderScene(void) {
     if (isLightOn) glColor3f(1.0f, 1.0f, 1.0f);
     else glColor3f(0.2f, 0.2f, 0.2f);
 
-    // Vẽ bàn giáo viên xoay ngược hướng 180 độ
     glPushMatrix();
     glTranslatef(2.2f, 0.0f, -3.2f);
     glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
@@ -389,13 +437,11 @@ void renderScene(void) {
     glPopMatrix();
     glPopMatrix();
 
-    // Vẽ bục phát biểu cao 1m cạnh bàn giáo viên (gần sát tường phải)
     glPushMatrix();
-    glTranslatef(3.3f, -1.0f, -3.2f); // y = -1.0f giúp đáy bục đặt khít trên sàn nhà
+    glTranslatef(3.3f, -1.0f, -3.2f);
     bucPhatBieu.draw();
     glPopMatrix();
 
-    // Khôi phục mảng 3 cột ban đầu để giữ lại các dãy bàn ở giữa phòng
     float dãy_X[3] = { -2.3f, 0.8f, 3.9f };
     int count = 0;
 
@@ -417,7 +463,6 @@ void renderScene(void) {
                 continue;
             }
 
-            // CHỈ XÓA dãy bàn ghế thò ra ngoài sát cửa sổ (col == 2 ứng với vị trí dịch phải +0.6f)
             if (col == 2) {
                 continue;
             }
